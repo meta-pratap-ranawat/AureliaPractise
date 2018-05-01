@@ -1,0 +1,9 @@
+<template>
+  <h1>${value}</h1>
+  <ul>
+    <li repeat.for="todo of todos" class="item">
+      <input type="checkbox" checked.bind="todo.done" />
+      <span css="text-decoration: ${ todo.done ? 'line-through' : 'none' }" class="item-text" >${ todo.title }</span>>
+    </li>
+  </ul>
+</template>
