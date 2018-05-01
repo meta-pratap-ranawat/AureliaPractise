@@ -18,8 +18,9 @@ describe('TodoList', () => {
 
     it('should render the todos', done => {
         component.create(bootstrap).then(() => {
-            const listElements = document.querySelectorAll('.item-text');
-            expect(listElements[0].innerHTML).toBe('Item 1');
+            const listElements = document.querySelectorAll('.item');
+            expect(listElements[0].innerHTML.trim()).toBe('Item 1');
+            console.log("Custom Log by Is item present: ");
             done()
         }).catch(e => {
             console.log("Custom Log by Dev: "+e.toString());
@@ -41,7 +42,7 @@ describe('TodoList', () => {
 
     it('should put aline through completed todos', done => {
         component.create(bootstrap).then(() => {
-            const checkboxes = document.querySelectorAll('.item-text');
+            const checkboxes = document.querySelectorAll('.item');
             expect(checkboxes[2].style.textDecoration).toBe('line-through');
             console.log("Custom Log by line- through: ");
             done()
