@@ -1,4 +1,28 @@
 <template>
+  <div>
+    <label>
+        # Per Page:
+        <select value.two-way="selectedPaginationPageSize">
+          <option value="">Choose...</option>
+          <option repeat.for="paginationPageSize of paginationPageSizes"
+                  value.two-way="paginationPageSize">
+            ${paginationPageSize}
+          </option>
+        </select>
+      </label>
+    <label>
+        Sorting:
+        <select value.two-way="selectedSortingOrder">
+          <option value="">Choose...</option>
+          <option repeat.for="sortingOrder of sortingOrders"
+                  value.two-way="sortingOrder">
+            ${sortingOrder}
+          </option>
+        </select>
+      </label>
+    <input type="text" value.two-way="quickFilterText" />
+    <button click.delegate="onFilterTextBoxChanged()">Search</button>
+    <br/>
     <div style="width: 740px;border: 1px solid gray;">
       <div style="width: 100%; height: 350px;">
         <ag-grid-aurelia #agGrid style="width: 100%; height: 100%;" class="ag-theme-balham"
@@ -10,5 +34,23 @@
         </ag-grid-aurelia>
       </div>
     </div>
-    </div>
-  </template>
+  </div>
+  <div style="position: fixed; top: 600px; left: 400px">
+      <div>
+          <button click.delegate="onBtFirst()">To First</button>
+          <button click.delegate="onBtPrevious()">To Previous</button>
+          <button click.delegate="onBtNext()">To Next</button>
+          <button click.delegate="onBtLast()">To Last</button>
+      </div>
+      <div style="margin-top: 6px">
+          <span class="label">Last Page Found:</span>
+          <span class="value" id="lbLastPageFound">-</span>
+          <span class="label">Page Size:</span>
+          <span class="value" id="lbPageSize">-</span>
+          <span class="label">Total Pages:</span>
+          <span class="value" id="lbTotalPages">-</span>
+          <span class="label">Current Page:</span>
+          <span class="value" id="lbCurrentPage">-</span>
+      </div>
+  </div>
+</template>

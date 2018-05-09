@@ -1,4 +1,4 @@
-import {autoinject, customElement} from "aurelia-framework";
+import {autoinject, customElement, observable, View} from "aurelia-framework";
 
 import {GridOptions} from "ag-grid";
 
@@ -14,22 +14,32 @@ import {GridOptions} from "ag-grid";
 export class MyGridPage {
 
     private gridOptions: GridOptions;
+    public quickFilterText: string;
+    public sortingOrders = ['asc', 'desc'];
+    public paginationPageSizes = [1,5,10,50,100];
+    private gridOptionsApi: any;
+
+    @observable({ changeHandler: 'changeSorting' }) selectedSortingOrder: string = '';
+    @observable({ changeHandler: 'changePaginationPageSize' }) selectedPaginationPageSize: number;
 
     constructor() {
         this.gridOptions = <GridOptions>{};
         this.gridOptions.rowData = this.createRowData();
-        this.gridOptions.enableFilter = true;
-        this.gridOptions.enableSorting = true;
+        //this.gridOptions.enableFilter = true;
+        //this.gridOptions.enableSorting = true;
         this.gridOptions.pagination = true;
-        this.gridOptions.paginationPageSize = 10;
-        this.gridOptions.enableSorting = true;
-        //this.gridOptions.api.setQ
+        this.gridOptions.suppressPaginationPanel = true;
+        this.gridOptions.onPaginationChanged =  this.onPaginationChanged;
+        this.gridOptions.paginationPageSize = this.selectedPaginationPageSize = 10;
+        this.gridOptionsApi = this.gridOptions.api;
+        //this.gridOptions.enableSorting = true;
         // this.gridOptions.defaultColDef = {
         //     menuTabs: ['filterMenuTab']
         // }
     }
 
-    private createRowData() {
+    private createRowData()
+    {
         return [
             {"row": "Row 1", "name": "Michael Phelps"},
             {"row": "Row 2", "name": "Natalie Coughlin"},
@@ -65,6 +75,74 @@ export class MyGridPage {
         ];
     }
 
+    public onFilterTextBoxChanged()
+    {
+        if(this.gridOptions == undefined || this.gridOptions.api == undefined) return;
+
+        this.gridOptions.api.setQuickFilter(this.quickFilterText);
+    }
+
+    public changeSorting(newValue, oldValue)
+    {
+        if(this.gridOptions == undefined || this.gridOptions.api == undefined) return;
+
+        if(newValue != oldValue)
+        {
+            var sort = [
+                {colId: 'row', sort: newValue}
+            ];
+            this.gridOptions.enableSorting = true;
+            this.gridOptions.api.setSortModel(sort);
+            this.gridOptions.enableSorting = false;
+        }
+        
+    }
+
+    public changePaginationPageSize(newValue, oldValue)
+    {
+        if(this.gridOptions == undefined || this.gridOptions.api == undefined) return;
+
+        if(newValue != oldValue)
+        {
+            this.gridOptions.api.paginationSetPageSize(newValue);
+            this.gridOptionsApi = this.gridOptions.api;
+        }
+        
+    }
+
+    setText(selector, text) {
+        document.querySelector(selector).innerHTML = text;
+    }
+    
+    onPaginationChanged(this) {
+        console.log('onPaginationPageLoaded');
+    
+        // Workaround for bug in events order
+        if (this.gridOptionsApi) {
+            this.setText('#lbPageSize', this.gridOptionsApi.paginationGetPageSize());
+            // we +1 to current page, as pages are zero based
+            this.setText('#lbCurrentPage', this.gridOptionsApi.paginationGetCurrentPage() + 1);
+            this.setText('#lbTotalPages', this.gridOptionsApi.paginationGetTotalPages());
+            this.setText('#lbRowCnt',this.gridOptionsApi.paginationGetRowCount());
+        }
+    }
+    
+    onBtFirst() {
+        this.gridOptions.api.paginationGoToFirstPage();
+    }
+    
+    onBtLast() {
+        this.gridOptions.api.paginationGoToLastPage();
+    }
+    
+    onBtNext() {
+        this.gridOptions.api.paginationGoToNextPage();
+    }
+    
+    onBtPrevious() {
+        this.gridOptions.api.paginationGoToPreviousPage();
+    }
+    
     //  getPartialMatchFilter() {
     //      return PartialMatchFilter;
     //  }
