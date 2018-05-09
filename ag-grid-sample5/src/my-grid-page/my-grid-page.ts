@@ -23,6 +23,7 @@ export class MyGridPage {
         this.gridOptions.pagination = true;
         this.gridOptions.paginationPageSize = 10;
         this.gridOptions.enableSorting = true;
+        //this.gridOptions.api.setQ
         // this.gridOptions.defaultColDef = {
         //     menuTabs: ['filterMenuTab']
         // }
