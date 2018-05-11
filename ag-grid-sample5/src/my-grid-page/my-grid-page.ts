@@ -2,6 +2,10 @@ import {autoinject, customElement, observable, View} from "aurelia-framework";
 
 import {GridOptions} from "ag-grid";
 
+import 'ag-grid/dist/styles/ag-grid.css';
+import 'ag-grid/dist/styles/ag-theme-balham.css';
+
+
 // only import this if you are using the ag-Grid-Enterprise
 //import "ag-grid-enterprise/main";
 
@@ -14,28 +18,33 @@ import {GridOptions} from "ag-grid";
 export class MyGridPage {
 
     private gridOptions: GridOptions;
-    public quickFilterText: string;
-    public sortingOrders = ['asc', 'desc'];
-    public paginationPageSizes = [1,5,10,50,100];
+    private quickFilterText: string;
+    private quickGoToPage: number;
+    private sortingOrders = ['asc', 'desc'];
+    private paginationPageSizes = [1,5,10,50,100];
     private gridOptionsApi: any;
-
+    private pageRowDetail: any;
+    @observable() pageBucket: Array<number>;
+    @observable() currentPage: number;
+    @observable() lastPage: number;
     @observable({ changeHandler: 'changeSorting' }) selectedSortingOrder: string = '';
     @observable({ changeHandler: 'changePaginationPageSize' }) selectedPaginationPageSize: number;
 
     constructor() {
         this.gridOptions = <GridOptions>{};
         this.gridOptions.rowData = this.createRowData();
-        //this.gridOptions.enableFilter = true;
-        //this.gridOptions.enableSorting = true;
         this.gridOptions.pagination = true;
         this.gridOptions.suppressPaginationPanel = true;
-        this.gridOptions.onPaginationChanged =  this.onPaginationChanged;
-        this.gridOptions.paginationPageSize = this.selectedPaginationPageSize = 10;
+        this.gridOptions.paginationPageSize = 10;
+    }
+
+    private onGridReady()
+    {
         this.gridOptionsApi = this.gridOptions.api;
-        //this.gridOptions.enableSorting = true;
-        // this.gridOptions.defaultColDef = {
-        //     menuTabs: ['filterMenuTab']
-        // }
+        this.selectedPaginationPageSize = 10;
+        this.initializePageBucket(5);
+        
+        this.updatePageRowDetail();
     }
 
     private createRowData()
@@ -75,14 +84,16 @@ export class MyGridPage {
         ];
     }
 
-    public onFilterTextBoxChanged()
+    private onFilterTextBoxChanged()
     {
         if(this.gridOptions == undefined || this.gridOptions.api == undefined) return;
 
         this.gridOptions.api.setQuickFilter(this.quickFilterText);
+
+        this.initializePageBucket(5);
     }
 
-    public changeSorting(newValue, oldValue)
+    private changeSorting(newValue, oldValue)
     {
         if(this.gridOptions == undefined || this.gridOptions.api == undefined) return;
 
@@ -98,53 +109,118 @@ export class MyGridPage {
         
     }
 
-    public changePaginationPageSize(newValue, oldValue)
+    private changePaginationPageSize(newValue, oldValue)
     {
         if(this.gridOptions == undefined || this.gridOptions.api == undefined) return;
 
         if(newValue != oldValue)
         {
             this.gridOptions.api.paginationSetPageSize(newValue);
-            this.gridOptionsApi = this.gridOptions.api;
+            this.initializePageBucket(5);
         }
         
     }
-
-    setText(selector, text) {
-        document.querySelector(selector).innerHTML = text;
+    
+    private onPaginationChanged() {
+        if (this.gridOptionsApi) 
+        {
+            this.updatePageRowDetail();
+            this.updatePageBucket(this.gridOptionsApi.paginationGetCurrentPage()+1, this.gridOptionsApi.paginationGetTotalPages());
+        }
     }
-    
-    onPaginationChanged(this) {
-        console.log('onPaginationPageLoaded');
-    
-        // Workaround for bug in events order
-        if (this.gridOptionsApi) {
-            this.setText('#lbPageSize', this.gridOptionsApi.paginationGetPageSize());
-            // we +1 to current page, as pages are zero based
-            this.setText('#lbCurrentPage', this.gridOptionsApi.paginationGetCurrentPage() + 1);
-            this.setText('#lbTotalPages', this.gridOptionsApi.paginationGetTotalPages());
-            this.setText('#lbRowCnt',this.gridOptionsApi.paginationGetRowCount());
+
+    private initializePageBucket(defaultPageBucketSize: number)
+    {
+        let pageBucketSize = this.gridOptionsApi.paginationGetTotalPages() < defaultPageBucketSize ? this.gridOptionsApi.paginationGetTotalPages() : defaultPageBucketSize;
+        this.pageBucket = [];
+        for(let i=1; i<= pageBucketSize; i++)
+        {
+            this.pageBucket.push(i);
+        }
+            
+    }
+
+    private updatePageRowDetail()
+    {
+        this.currentPage = this.gridOptionsApi.paginationGetCurrentPage() + 1; // indexing start from 1
+        this.lastPage = this.gridOptionsApi.paginationGetTotalPages();
+        let totalPages = this.lastPage;
+        let currPage =  this.gridOptionsApi.paginationGetCurrentPage(); // indexing start from 0
+        let rowCnt = this.gridOptionsApi.paginationGetRowCount();
+        let pageSize = this.gridOptionsApi.paginationGetPageSize();
+
+        if(totalPages <= 1)
+        {
+            this.pageRowDetail = (rowCnt+" of "+rowCnt);
+        }
+        else
+        {
+            if(this.currentPage == totalPages) //checking for last page
+            {
+                if((rowCnt % pageSize) == 1)
+                {
+                    this.pageRowDetail = ((currPage * pageSize) + 1) + " of " + rowCnt;  
+                }
+                else
+                {
+                    this.pageRowDetail = ((currPage * pageSize) + 1) +"-"+((currPage * pageSize) + (rowCnt % pageSize)) + " of " + rowCnt;  
+                }
+              
+            }
+            else
+            {
+                this.pageRowDetail = (((currPage * pageSize) + 1) +"-"+((currPage + 1) * pageSize) +" of "+rowCnt);
+            }
         }
     }
     
-    onBtFirst() {
+    private onBtFirst() {
         this.gridOptions.api.paginationGoToFirstPage();
     }
+
+    private updatePageBucket(value: number, totalPages: number)
+    {
+        let pbl = totalPages < 5 ? totalPages : 5;
+        if(value < this.pageBucket[0] && value > 0)
+        {
+            this.pageBucket = [];
+            for(let i=0; i<pbl; i++)
+            {
+                this.pageBucket.push(value + i);
+            }
+        }
+        if(value > this.pageBucket[pbl - 1] && value <= totalPages)
+        {
+            this.pageBucket = [];
+            for(let i=pbl; i>0; i--)
+            {
+                this.pageBucket.push(value - i + 1);
+            }
+        }
+    }
     
-    onBtLast() {
+    private onBtLast() {
         this.gridOptions.api.paginationGoToLastPage();
     }
     
-    onBtNext() {
+    private onBtNext() {
         this.gridOptions.api.paginationGoToNextPage();
     }
     
-    onBtPrevious() {
+    private onBtPrevious() {
         this.gridOptions.api.paginationGoToPreviousPage();
     }
-    
-    //  getPartialMatchFilter() {
-    //      return PartialMatchFilter;
-    //  }
+
+    private onBtGoToPage(value: any) {
+        if(value)
+        {
+            this.gridOptions.api.paginationGoToPage(value - 1);
+        }
+        else
+        {
+            this.gridOptions.api.paginationGoToPage(this.quickGoToPage - 1);
+        }
+    }
+
 }
 
