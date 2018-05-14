@@ -1,0 +1,12 @@
+<template>
+  <h1>${message}</h1>
+  <form submit.delegate="submit(images)">
+
+    <input type="file"
+        name="images"
+        files.bind="images"
+        multiple>
+
+    <button type="submit">Send</button>
+</form>
+</template>
