@@ -1,11 +1,62 @@
 <template>
-  <h1>${message}</h1>
-  <form submit.delegate="submit(images)">
+        <style>
+ 
 
-    <input type="file"
-        name="images"
+                img {
+                  display: block;
+                  max-width:50px;
+                  max-height:50px;
+                  width: 50px;
+                  height: 50px;
+                }
+
+                .upload-btn-wrapper {
+  position: relative;
+  overflow: hidden;
+  display: inline-block;
+}
+
+.btn {
+  border: 2px solid gray;
+  color: gray;
+  background-color: white;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.upload-btn-wrapper input[type=file] {
+  font-size: 100px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+}
+                
+                
+                    
+                  </style>
+  <require from="./resources/value-converters/BlobToUrlValueConverter"></require>
+  <require from="./resources/value-converters/FileListToArrayValueConverter"></require>
+  <h1>${message}</h1>
+  <ul>
+    <li repeat.for="file of savedImages">
+      <img src.bind="file | blobToUrl"><img>
+      <button type="button" click.delegate="deleteImage(file)">Delete</button>
+    </li>
+  </ul>
+  <form submit.delegate="submit(images)" >
+<div class="upload-btn-wrapper">
+        <input type="file"
+        name = "images"
         files.bind="images"
+        change.delegate = "onFileChange(images)"
         multiple>
+
+        <button class="btn">Upload a file</button>
+</div>
+    
 
     <button type="submit">Send</button>
 </form>
